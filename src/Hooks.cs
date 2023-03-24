@@ -21,8 +21,6 @@ namespace ArtificerDontSwallow
         {
             On.RainWorld.OnModsInit += RainWorld_OnModsInit;
 
-            On.Player.SwallowObject += Player_SwallowObject;
-
             On.Player.CraftingResults += Player_CraftingResults;
         }
 
@@ -56,8 +54,14 @@ namespace ArtificerDontSwallow
         {
             AbstractPhysicalObject.AbstractObjectType result = orig(self);
 
-            if (result != null) return result;
-            
+            if (!IsCrafting(self))
+                return result;
+
+            if (result != null)
+                return result;
+
+
+
             for (int i = 0; i < 2; i++)
             {
                 if (self.grasps[i] == null) continue;
@@ -84,21 +88,25 @@ namespace ArtificerDontSwallow
 
 
             c.GotoNext(MoveType.After,
-                x => x.MatchLdnull(),
-                x => x.MatchStloc(0));
+                x => x.MatchLdsfld<MoreSlugcats.MoreSlugcatsEnums.SlugcatStatsName>("Artificer"),
+                x => x.Match(OpCodes.Call),
+                x => x.MatchBrfalse(out _));
 
             ILLabel? afterHook = c.MarkLabel();
 
             c.Emit(OpCodes.Ldarg_0);
             c.EmitDelegate<Func<Player, bool>>((self) =>
             {
+                if (self.grasps[0] != null && self.grasps[0].grabbed.abstractPhysicalObject.type == AbstractPhysicalObject.AbstractObjectType.Spear)
+                    return true;
+
                 for (int i = 0; i < self.grasps.Length; i++)
                 {
                     if (self.grasps[i] == null) continue;
 
                     AbstractPhysicalObject heldObject = self.grasps[i].grabbed.abstractPhysicalObject;
 
-                    if (!IsObjectCraftable(heldObject)) continue;
+                    if (!self.GraspsCanBeCrafted()) continue;
 
                     AbstractPhysicalObject? abstractCraftedObject = GetCraftedObject(self, heldObject);
                     if (abstractCraftedObject == null) continue;
@@ -153,23 +161,18 @@ namespace ArtificerDontSwallow
                 x => x.MatchBle(out afterCraft));
 
             c.Emit(OpCodes.Ldarg_0);
-            c.EmitDelegate<Func<Player, bool>>((self) =>
-            {
-                if (!Options.disableForceCraft.Value) return true;
-                
-                if (!PlayersCrafting.TryGetValue(self, out var isCrafting)) return true;
+            c.EmitDelegate<Func<Player, bool>>((player) => Options.disableForceCraft.Value);
 
-                return isCrafting.Value;
-            });
-
-            c.Emit(OpCodes.Brfalse, afterCraft);
+            c.Emit(OpCodes.Brtrue, afterCraft);
         }
 
         private static void Player_GrabUpdateIL(ILContext il)
         {
             ILCursor c = new ILCursor(il);
 
-            // Normally cannot swallow when Y is held, allow it when a held object is craftable
+            // Normally cannot swallow when Y is held, allow it when:
+            // We are Artificer
+            // Up is held, not down
             c.GotoNext(MoveType.After,
                 x => x.MatchCallOrCallvirt<Player>("SpitUpCraftedObject"),
                 x => x.MatchLdarg(0),
@@ -185,71 +188,31 @@ namespace ArtificerDontSwallow
                 if (self.SlugCatClass != MoreSlugcats.MoreSlugcatsEnums.SlugcatStatsName.Artificer)
                     return true;
 
-                for (int i = 0; i < 2; i++)
-                {
-                    if (self.grasps[i] == null) continue;
+                if (self.input[0].y != 1)
+                    return true;
 
-                    if (IsObjectCraftable(self.grasps[i].grabbed.abstractPhysicalObject))
-                        return false;
-                }
-
-                return true;
+                return false;
             });
             
             c.Emit(OpCodes.And);
         }
-
-        private static ConditionalWeakTable<Player, StrongBox<bool>> PlayersCrafting = new ConditionalWeakTable<Player, StrongBox<bool>>();
         
 
-        private static void Player_SwallowObject(On.Player.orig_SwallowObject orig, Player self, int grasp)
+
+        private static bool IsCrafting(Player self)
         {
-            bool isCrafting = true;
+            if (self.SlugCatClass != MoreSlugcats.MoreSlugcatsEnums.SlugcatStatsName.Artificer)
+                return false;
 
-            // Are we Artificer?
-            if (!ModManager.MSC || self.SlugCatClass != MoreSlugcats.MoreSlugcatsEnums.SlugcatStatsName.Artificer)
-                isCrafting = false;
-
-            // Is the held object craftable?
-            if (grasp >= 0 && self.grasps[grasp] != null)
-                if (!IsObjectCraftable(self.grasps[grasp].grabbed.abstractPhysicalObject))
-                    isCrafting = false;
-
-            // Do we have the food necessary to craft?
-            if (self.FoodInStomach <= 0)
-                isCrafting = false;
-
-            // If we can't always craft, are the inputs correct?
-            if (!Options.alwaysInstantCraft.Value)
-                if ((self.input[0].y != 1 && Options.holdUpToCraft.Value) || (self.input[0].y == 1 && !Options.holdUpToCraft.Value))
-                    isCrafting = false;
+            if (self.CurrentFood <= 0)
+                return false;
 
 
+            if (Options.holdUpToStore.Value && self.input[0].y != 1)
+                return true;
 
-            if (PlayersCrafting.TryGetValue(self, out var isCraftingStrongBox))
-                isCraftingStrongBox.Value = isCrafting;
-
-            else
-                PlayersCrafting.Add(self, new StrongBox<bool>(isCrafting));
-
-
-            orig(self, grasp);
-
-
-            if (!isCrafting) return;
-
-            self.Regurgitate();
-        }
-
-        private static bool IsObjectCraftable(AbstractPhysicalObject abstractObject)
-        {
-            AbstractPhysicalObject.AbstractObjectType type = abstractObject.type;
-
-            if (type == AbstractPhysicalObject.AbstractObjectType.Rock) return true;
-
-            if (type == AbstractPhysicalObject.AbstractObjectType.FlyLure) return true;
-
-            if (type == AbstractPhysicalObject.AbstractObjectType.FlareBomb) return true;
+            if (!Options.holdUpToStore.Value && self.input[0].y == 1)
+                return true;
 
             return false;
         }

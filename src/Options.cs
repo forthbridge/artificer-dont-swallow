@@ -13,18 +13,15 @@ namespace ArtificerDontSwallow
 
         #region Options
 
-        public static Configurable<bool> holdUpToCraft = instance.config.Bind("holdUpToCraft", false, new ConfigurableInfo(
-            "When checked, up must be held to spit out immediately. When unchecked, up must be held to store.",
-            null, "", "Hold Up to Craft?"));
-
-        public static Configurable<bool> alwaysInstantCraft = instance.config.Bind("alwaysInstantCraft", false, new ConfigurableInfo(
-            "When checked, disables the option to store craftable items, they are always spit out immediately!",
-            null, "", "Always Instant Craft?"));
+        public static Configurable<bool> holdUpToStore = instance.config.Bind("holdUpToStore", true, new ConfigurableInfo(
+            "When checked, up must be held to store without crafting. When unchecked, up must NOT be held instead.",
+            null, "", "Hold Up to Store?"));
 
         public static Configurable<bool> disableForceCraft = instance.config.Bind("disableForceCraft", false, new ConfigurableInfo(
-            "When checked, swallowed items aren't always converted - only when manually crafting.",
+            "When checked, swallowed items aren't automatically crafted.",
             null, "", "Disable Force Craft?"));
 
+        
         #endregion
 
         #region Parameters
@@ -67,14 +64,11 @@ namespace ArtificerDontSwallow
 
             AddTab(ref tabIndex, "General");
 
-            AddCheckBox(holdUpToCraft, (string)holdUpToCraft.info.Tags[0]);
-            AddCheckBox(alwaysInstantCraft, (string)alwaysInstantCraft.info.Tags[0]);
-            DrawCheckBoxes(ref Tabs[tabIndex]);
-
+            AddCheckBox(holdUpToStore, (string)holdUpToStore.info.Tags[0]);
             AddCheckBox(disableForceCraft, (string)disableForceCraft.info.Tags[0]);
             DrawCheckBoxes(ref Tabs[tabIndex]);
 
-            AddNewLine(15);
+            AddNewLine(18);
             DrawBox(ref Tabs[tabIndex]);
         }
 
