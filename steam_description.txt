@@ -1,0 +1,8 @@
+[h1]Allows Artificer to craft items without having to swallow them first![/h1]
+
+[b][u]To swallow an item, instead hold up and grab at the same time.[/u][/b]
+
+[b]Also provides an option to disable swallowed items being automatically crafted![/b]
+
+[b](thumbnail and idea by NightCatGamer)[/b]
+[b][u]Source: https://github.com/forthbridge/artificer-dont-swallow[/u][/b]

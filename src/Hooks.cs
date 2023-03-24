@@ -61,7 +61,6 @@ namespace ArtificerDontSwallow
                 return result;
 
 
-
             for (int i = 0; i < 2; i++)
             {
                 if (self.grasps[i] == null) continue;
@@ -97,19 +96,20 @@ namespace ArtificerDontSwallow
             c.Emit(OpCodes.Ldarg_0);
             c.EmitDelegate<Func<Player, bool>>((self) =>
             {
-                if (self.grasps[0] != null && self.grasps[0].grabbed.abstractPhysicalObject.type == AbstractPhysicalObject.AbstractObjectType.Spear)
+                if (self.grasps[0] != null && self.grasps[0].grabbed.abstractPhysicalObject.type == AbstractPhysicalObject.AbstractObjectType.Spear
+                    && !((AbstractSpear)self.grasps[0].grabbed.abstractPhysicalObject).explosive)
                     return true;
 
                 for (int i = 0; i < self.grasps.Length; i++)
                 {
                     if (self.grasps[i] == null) continue;
 
-                    AbstractPhysicalObject heldObject = self.grasps[i].grabbed.abstractPhysicalObject;
 
-                    if (!self.GraspsCanBeCrafted()) continue;
+                    AbstractPhysicalObject heldObject = self.grasps[i].grabbed.abstractPhysicalObject;
 
                     AbstractPhysicalObject? abstractCraftedObject = GetCraftedObject(self, heldObject);
                     if (abstractCraftedObject == null) continue;
+
 
                     self.ReleaseGrasp(i);
                     heldObject.realizedObject.RemoveFromRoom();
@@ -177,6 +177,19 @@ namespace ArtificerDontSwallow
                 x => x.MatchCallOrCallvirt<Player>("SpitUpCraftedObject"),
                 x => x.MatchLdarg(0),
                 x => x.MatchLdcI4(0));
+
+            c.GotoPrev(MoveType.Before,
+                x => x.MatchLdfld<Player>("craftingObject"));
+
+            c.EmitDelegate<Action<Player>>((self) =>
+            {
+                if (self.SlugCatClass != MoreSlugcats.MoreSlugcatsEnums.SlugcatStatsName.Artificer)
+                    return;
+
+                if (self.input[0].y != self.input[1].y)
+                    self.swallowAndRegurgitateCounter = 0;
+            });
+            c.Emit(OpCodes.Ldarg_0);
 
             c.GotoNext(MoveType.After,
                 x => x.Match(OpCodes.Ldelema),
