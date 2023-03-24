@@ -52,33 +52,27 @@ namespace ArtificerDontSwallow
 
         private static AbstractPhysicalObject.AbstractObjectType Player_CraftingResults(On.Player.orig_CraftingResults orig, Player self)
         {
-            AbstractPhysicalObject.AbstractObjectType result = orig(self);
-
-            if (!IsCrafting(self))
-                return result;
-
-            if (result != null)
-                return result;
-
-
-            for (int i = 0; i < 2; i++)
+            if (IsCrafting(self))
             {
-                if (self.grasps[i] == null) continue;
+                for (int i = 0; i < 2; i++)
+                {
+                    if (self.grasps[i] == null) continue;
 
-                AbstractPhysicalObject.AbstractObjectType type = self.grasps[i].grabbed.abstractPhysicalObject.type;
+                    AbstractPhysicalObject.AbstractObjectType type = self.grasps[i].grabbed.abstractPhysicalObject.type;
 
 
-                if (type == AbstractPhysicalObject.AbstractObjectType.Rock)
-                    return AbstractPhysicalObject.AbstractObjectType.ScavengerBomb;
+                    if (type == AbstractPhysicalObject.AbstractObjectType.Rock)
+                        return AbstractPhysicalObject.AbstractObjectType.ScavengerBomb;
 
-                if (type == AbstractPhysicalObject.AbstractObjectType.FlyLure)
-                    return AbstractPhysicalObject.AbstractObjectType.FirecrackerPlant;
+                    if (type == AbstractPhysicalObject.AbstractObjectType.FlyLure)
+                        return AbstractPhysicalObject.AbstractObjectType.FirecrackerPlant;
 
-                if (type == AbstractPhysicalObject.AbstractObjectType.FlareBomb)
-                    return AbstractPhysicalObject.AbstractObjectType.Lantern;
+                    if (type == AbstractPhysicalObject.AbstractObjectType.FlareBomb)
+                        return AbstractPhysicalObject.AbstractObjectType.Lantern;
+                }
             }
 
-            return null!;
+            return orig(self);
         }
 
         private static void Player_SpitUpCraftedObject(ILContext il)
@@ -89,7 +83,7 @@ namespace ArtificerDontSwallow
             c.GotoNext(MoveType.After,
                 x => x.MatchLdsfld<MoreSlugcats.MoreSlugcatsEnums.SlugcatStatsName>("Artificer"),
                 x => x.Match(OpCodes.Call),
-                x => x.MatchBrfalse(out _));
+                x => x.MatchBrfalse(out _));    
 
             ILLabel? afterHook = c.MarkLabel();
 
