@@ -14,7 +14,7 @@ namespace ArtificerDontSwallow
         #region Options
 
         public static Configurable<bool> holdUpToStore = instance.config.Bind("holdUpToStore", true, new ConfigurableInfo(
-            "When checked, up must be held to store without crafting. When unchecked, up must NOT be held instead.",
+            "When checked, up must be held to swallow. When unchecked, up must NOT be held instead.",
             null, "", "Hold Up to Store?"));
 
         public static Configurable<bool> disableForceCraft = instance.config.Bind("disableForceCraft", false, new ConfigurableInfo(
