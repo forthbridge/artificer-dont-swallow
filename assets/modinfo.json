@@ -1,0 +1,11 @@
+{
+	"id": "artificerdontswallow",
+	"name": "Artificer, Don't Swallow!",
+	"version": "1.0.0",
+	"authors": "forthbridge",
+	"description": "Allows Artificer to craft items without having to swallow them first!<LINE><LINE>Source: https://github.com/forthbridge/artificer-dont-swallow",
+	"requirements": [],
+	"requirements_names": [],
+	"tags": ["Accessibility", "Game Mechanics"],
+	"checksum_override_version": false
+}
